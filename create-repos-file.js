@@ -22,7 +22,7 @@ const desiredRepos = allTheThings
       !b.fork &&
       !b.archived &&
       !b.disabled &&
-      b.default_branch === 'master' &&
+      b.default_branch === 'master'
   )
   .map(b => b.html_url)
 
