@@ -1,20 +1,57 @@
-// run this with: node ./create-repos-file.js
 const fs = require('fs')
+const https = require('https')
 
-// create these files using:
+function startsWithPage(filename) { return filename.startsWith('page') }
 
-// curl "https://api.github.com/users/USERNAME/repos?type=sources&per_page=100&page=1" > page1.json
-// etc... or make this more useful I guess...
+function requireFiles(allFiles, file) {
+  const contents = require(`./${file}`)
+  return [...allFiles, ...contents]
+}
 
-const allTheThings = [
-  ...require('./page1.json'),
-  ...require('./page2.json'),
-  ...require('./page3.json'),
-  ...require('./page4.json'),
-  ...require('./page5.json'),
-  ...require('./page6.json'),
-  ...require('./page7.json'),
-]
+let username
+
+const options = {
+  host: 'api.github.com',
+  method: 'GET',
+  headers: { 'user-agent': 'node.js' }
+}
+
+try {
+  username = process.argv[2].split('=')[1]
+  if (!username) throw ('It looks like the correct format wasn\'t used for the username argument.\n')
+} catch (e) {
+  const errorStr = typeof e === 'string' ? e : ''
+  console.error('\n❌ Please pass in your GitHub username.\n', errorStr)
+  process.exit(1)
+}
+
+function getPage(pageNumber) {
+  const path = `/users/${username}/repos?type=sources&per_page=100&page=${pageNumber}`
+
+  https.get({ ...options, path }, res => {
+    res.setEncoding('utf-8')
+
+    let body = ''
+
+    if (res.statusCode === 200)
+      res
+        .on('data', chunk => body += chunk)
+        .on('end', () => {
+          if (body.length > 2) {
+            fs.writeFileSync(`./page${pageNumber}.json`, body)
+            getPage(++pageNumber)
+          }
+        })
+        .on('error', console.error)
+    else console.log(`GET request to GitHub API failed with a ${res.statusCode}.`)
+  })
+}
+
+getPage(1)
+
+const pages = fs.readdirSync(process.cwd()).filter(startsWithPage)
+
+const allTheThings = pages.reduce(requireFiles, [])
 
 const desiredRepos = allTheThings
   .filter(
