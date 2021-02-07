@@ -9,8 +9,7 @@ Steps:
 
 1. clone this repo
 2. `npm install`
-3. create repos.json file (see `create-repos-file.js` for help making that)
-   which is an array of URLs to all the repos you want to rename
+3. run `node create-repos-file.js --username={USERNAME}` with your username. This will create repos.json, which is an array of URLs to all the repos you want to rename
 4. Run `npm run cy`
 5. Run the test "rename"
 6. Login with your credentials and then press "resume"
